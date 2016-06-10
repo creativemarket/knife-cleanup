@@ -40,31 +40,38 @@ module ServerCleanup
      :boolean => true,
      :default => false
 
+     option :cookbook,
+      :short => "-C COOKBOOK",
+      :long => "--cookbook COOKBOOK",
+      :description => "Only cleanup the named cookbook"
+
     def run
       cookbooks
     end
 
     def cookbooks
-      ui.msg "Searching for unused cookboks versions..."
-      all_cookbooks = rest.get_rest("/cookbooks?num_versions=all")
-      latest_cookbooks = rest.get_rest("/cookbooks?latest")
-      
+      ui.msg "Searching for unused cookbook versions..."
+      endpoint = "/cookbooks"
+      endpoint += "/#{config[:cookbook]}" unless config[:cookbook].nil?
+      all_cookbooks = rest.get_rest("#{endpoint}?num_versions=all")
+      latest_cookbooks = rest.get_rest("#{endpoint}??latest")
+
       # All cookbooks
       cbv = all_cookbooks.inject({}) do |collected, ( cookbook, versions )|
         collected[cookbook] = versions["versions"].map {|v| v['version']}
         collected
       end
-      
+
       # Get the latest cookbooks
       latest = latest_cookbooks.inject({}) do |collected, ( cookbook, versions )|
         collected[cookbook] = versions["versions"].map {|v| v['version']}
         collected
       end
-      
+
       latest.each_key do |cb|
         cbv[cb].delete(latest[cb][0])
       end
-      
+
       # Let see what cookbooks we have in use in all environments
       Chef::Environment.list.each_key do |env_list|
         env = Chef::Environment.load(env_list)
@@ -78,12 +85,14 @@ module ServerCleanup
           end
         end
       end
-      
+
       confirm("Do you really want to delete unused cookbook versions from the server")  if config[:delete]
       ui.msg "Cookbook Versions:"
       key_length = cbv.empty? ? 0 : cbv.keys.map {|name| name.size }.max + 2
       cbv.each_key do |cb|
+        next if cbv[cb].empty?
         print "  #{cb.ljust(key_length)}"
+        print "[keeping #{latest[cb][0]}] "
         cbv[cb].each do |cb_ver|
           print "#{cb_ver} "
           if config[:delete]
@@ -94,13 +103,13 @@ module ServerCleanup
         end
         print "\n"
       end
-      
+
       if !config[:delete]
         ui.msg "Not deleting unused cookbook versions; use --delete if you want to remove them"
       end
-      
+
     end
-    
+
     def delete_cookbook(cb, cb_ver)
       ui.msg "Deleting cookbook #{cb} version #{cb_ver}"
       rest.delete_rest("cookbooks/#{cb}/#{cb_ver}")

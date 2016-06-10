@@ -25,12 +25,14 @@ Currently there is only one command available:
 knife cleanup versions <-D>
 ```
 
-If you run it without --delete (-D) it will show you the versions that would be deleted, but not delete anything. In delete mode it will save first a backup of the version and then proceed to delete it. I've seen various strange situations where knife is not able to download the cookbook version from the server, and be aware that we will skip those cases and there will not be a backup for such corrupted versions. You've been warned. 
+If you run it without --delete (-D) it will show you the versions that would be deleted, but not delete anything. In delete mode it will save first a backup of the version and then proceed to delete it. I've seen various strange situations where knife is not able to download the cookbook version from the server, and be aware that we will skip those cases and there will not be a backup for such corrupted versions. You've been warned.
 
-Note: this is by no means production ready; I'm using it with success for my needs and hopefully you will find it useful too. Be sure to do a backup your chef server ([knife-backup][knifebackup] before using it, etc. 
+Only cookbooks with multiple versions installed will be displayed in the output. The most recent cookbook version that will be kept and not deleted is shown in brackets at the front of the list of cookbook versions.  If you only want to work on a single cookbook, use the --cookbook (-C) option with the name of the cookbook.
+
+Note: this is by no means production ready; I'm using it with success for my needs and hopefully you will find it useful too. Be sure to do a backup your chef server ([knife-backup][knifebackup] before using it, etc.
 
 ## Todo/Ideas
-  
+
   * Make backup optional and location of them configurable
   * Cleanup databags
   * Cleanup unused cookbooks
